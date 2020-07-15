@@ -182,10 +182,10 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0 
 # ElasticIp定義
-  RaisetechLive10EIP:
+  kanbanEIP:
     Type: AWS::EC2::EIPAssociation
     Properties:
-      EIP: 18.179.120.65
+      EIP: 54.199.46.142
       InstanceId: !Ref kanbanEC201
     DependsOn: kanbanEC201
         
