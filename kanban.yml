@@ -198,7 +198,7 @@ Resources:
       ImageId: ami-0d7ed3ddb85b521a6
       InstanceType: t2.micro
       AvailabilityZone: ap-northeast-1a
-      KeyName: trello.pem 
+      KeyName: trello
       NetworkInterfaces: 
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
