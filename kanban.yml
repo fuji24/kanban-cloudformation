@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: '2010-09-09'
-
 Resources:
 # ------------------------------------------------------------#
 #  VPC
@@ -183,21 +182,23 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0 
 # ElasticIp定義
-  kanbanEIP:
+  RaisetechLive10EIP:
     Type: AWS::EC2::EIPAssociation
     Properties:
       EIP: 18.179.120.65
-      InstanceId: !Ref kanbanEC201
-    DependsOn: kanbanEC201
+      InstanceId: !Ref RaisetechLive10Ec21a
+    DependsOn: RaisetechLive10Ec21a  
+        
 # ------------------------------------------------------------#
 #  EC2
 # ------------------------------------------------------------#  
   kanbanEC201:
     Type: 'AWS::EC2::Instance'
     Properties:
-      AvailabilityZone: ap-northeast-1a
       ImageId: ami-0d7ed3ddb85b521a6
       InstanceType: t2.micro
+      AvailabilityZone: ap-northeast-1a
+      KeyName: trello.pem 
       NetworkInterfaces: 
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
@@ -207,7 +208,6 @@ Resources:
               Ref: KanbanPublic1a
       CreditSpecification: 
         CPUCredits: standard
-      KeyName: trello.pem
       Tags:
         - Key: Name
           Value: kanban
