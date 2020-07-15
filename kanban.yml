@@ -3,6 +3,7 @@ Resources:
 # ------------------------------------------------------------#
 #  VPC
 # ------------------------------------------------------------#
+  # VPCの定義
   kanban:
     Type: AWS::EC2::VPC
     Properties:
@@ -10,20 +11,20 @@ Resources:
       Tags:
       - Key: Name
         Value: kanban
-
+  # インターネットゲートウェイの定義
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
       - Key: Name
         Value: kanban-IGW
-
+  # VPCGatewayAttachment定義
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref kanban
       InternetGatewayId: !Ref InternetGateway
-
+  # ルートテーブルの定義
   RouteTable:
     Type: AWS::EC2::RouteTable
     DependsOn: AttachGateway
@@ -32,7 +33,7 @@ Resources:
       Tags:
       - Key: Name
         Value: kanban-RouteTable
-
+  # インターネットゲートウェイとルートテーブルの関連付け
   Route:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -92,12 +93,15 @@ Resources:
       VpcId:
         !Ref kanban
 
-  SubnetRouteTableAssociation:
+  # サブネットとルートテーブルの関連付け
+  SubnetRouteTableAssociation1a:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref KanbanPublic1a
       RouteTableId: !Ref RouteTable
-  SubnetRouteTableAssociation:
+        
+  # サブネットとルートテーブルの関連付け
+  SubnetRouteTableAssociation1b:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref KanbanPublic1b
