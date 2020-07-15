@@ -186,8 +186,8 @@ Resources:
     Type: AWS::EC2::EIPAssociation
     Properties:
       EIP: 18.179.120.65
-      InstanceId: !Ref RaisetechLive10Ec21a
-    DependsOn: RaisetechLive10Ec21a  
+      InstanceId: !Ref kanbanEC201
+    DependsOn: kanbanEC201
         
 # ------------------------------------------------------------#
 #  EC2
