@@ -1,0 +1,298 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+# ------------------------------------------------------------#
+#  VPC
+# ------------------------------------------------------------#
+  kanban:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+      - Key: Name
+        Value: kanban
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: kanban-IGW
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref kanban
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: AttachGateway
+    Properties:
+      VpcId: !Ref kanban
+      Tags:
+      - Key: Name
+        Value: kanban-RouteTable
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+# ------------------------------------------------------------#
+#  Subnet
+# ------------------------------------------------------------#   
+  KanbanPublic1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: KanbanPublic1a
+      VpcId:
+        !Ref kanban
+
+  KanbanPublic1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1d
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: KanbanPublic1b
+      VpcId:
+        !Ref kanban
+
+  Kanbanprivate1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Kanbanprivate1a
+      VpcId:
+        !Ref kanban
+
+  Kanbanprivate1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1d
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Kanbanprivate1b
+      VpcId:
+        !Ref kanban
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref KanbanPublic1a
+      RouteTableId: !Ref RouteTable
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref KanbanPublic1b
+      RouteTableId: !Ref RouteTable    
+  
+# ------------------------------------------------------------#
+#  SecurityGroup
+# ------------------------------------------------------------#
+#EC2
+  kanbanEC2secure:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: {}
+      GroupName: kanbanEC2secure
+      Tags:
+        - Key: Name
+          Value: kanbanEC2secure
+      VpcId: !Ref kanban
+      GroupDescription: Inbound
+      SecurityGroupIngress:
+        #ssh
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        #ssh
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 153.204.67.89/32
+        #http
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        #rails
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+#ALB
+  kanbanALBsecure:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: {}
+      GroupName: kanbanALBsecure
+      Tags:
+        - Key: Name
+          Value: kanbanALBsecure
+      VpcId: !Ref kanban
+      GroupDescription: Inbound
+      SecurityGroupIngress:
+        #http
+        - 
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+#RDS
+  kanbanRDSsecure:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: {}
+      GroupName: kanbanRDSsecure
+      Tags:
+        - Key: Name
+          Value: kanbanRDSsecure
+      VpcId: !Ref kanban
+      GroupDescription: Inbound
+      SecurityGroupIngress:
+        #MYSQL/Aurora
+        -
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+        #http
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 
+# ElasticIp定義
+  kanbanEIP:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      EIP: 18.179.120.65
+      InstanceId: !Ref kanbanEC201
+    DependsOn: kanbanEC201
+# ------------------------------------------------------------#
+#  EC2
+# ------------------------------------------------------------#  
+  kanbanEC201:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      ImageId: ami-0d7ed3ddb85b521a6
+      InstanceType: t2.micro
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet: 
+            - Ref: kanbanEC2secure
+          SubnetId: 
+              Ref: KanbanPublic1a
+      CreditSpecification: 
+        CPUCredits: standard
+      KeyName: trello.pem
+      Tags:
+        - Key: Name
+          Value: kanban
+# ------------------------------------------------------------#
+#  RDS
+# ------------------------------------------------------------#
+  kanbanDB: 
+    Type: "AWS::RDS::DBInstance"
+    Properties: 
+      DBInstanceIdentifier: kanbanDB
+      DBSubnetGroupName:  !Ref kanbanDBsubnet
+      Engine: MySQL
+      EngineVersion: 5.7.22
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: 20
+      StorageType:  standard
+      DBName: kanbanDB
+      MasterUsername: admin
+      MasterUserPassword: adminpass
+      PubliclyAccessible: false
+      PreferredBackupWindow: "18:00-18:30"
+      PreferredMaintenanceWindow: "sat:19:00-sat:19:30"
+      AutoMinorVersionUpgrade: false  
+      VPCSecurityGroups:
+        - !Ref kanbanRDSsecure
+      CopyTagsToSnapshot: true
+      BackupRetentionPeriod: 7
+      Tags: 
+        - Key: "Name"
+          Value: kanbanDB
+    DeletionPolicy: "Delete"
+
+# ------------------------------------------------------------#
+#  DBSubnetGroup
+# ------------------------------------------------------------#
+  kanbanDBsubnet: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupName: kanbanDBsubnet
+      DBSubnetGroupDescription: "-"
+      SubnetIds: 
+        - !Ref  KanbanPublic1a
+        - !Ref  KanbanPublic1b
+        - !Ref  Kanbanprivate1a
+        - !Ref  Kanbanprivate1b
+# ------------------------------------------------------------#
+#  ALB
+# ------------------------------------------------------------#
+  TargetGroup: 
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties: 
+      VpcId: !Ref kanban
+      Protocol: HTTP
+      Port: 3000
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/"
+      HealthCheckPort: "traffic-port"
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 5
+      HealthCheckIntervalSeconds: 10
+      Matcher: 
+        HttpCode: 200
+
+      TargetGroupAttributes: 
+        - Key: "deregistration_delay.timeout_seconds"
+          Value: 300
+        - Key: "stickiness.enabled"
+          Value: false
+        - Key: "stickiness.type"
+          Value: lb_cookie
+        - Key: "stickiness.lb_cookie.duration_seconds"
+          Value: 86400
+      Targets: 
+        - Id: !Ref kanbanEC201
+          Port: 80
+
+  kanbanalb:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets: 
+        - !Ref KanbanPublic1a
+      SecurityGroups: 
+        - !Ref kanbanALBsecure
+      Listeners:
+        - LoadBalancerPort: '80'
+          InstancePort: '80'
+          Protocol: HTTP
