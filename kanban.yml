@@ -200,7 +200,7 @@ Resources:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-0d7ed3ddb85b521a6
-      InstanceType: t2.midium
+      InstanceType: t2.medium
       AvailabilityZone: ap-northeast-1a
       KeyName: trello
       NetworkInterfaces: 
