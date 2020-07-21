@@ -189,7 +189,7 @@ Resources:
   kanbanEIP:
     Type: AWS::EC2::EIPAssociation
     Properties:
-      EIP: 54.199.46.142
+      EIP: 54.150.157.47
       InstanceId: !Ref kanbanEC201
     DependsOn: kanbanEC201
         
